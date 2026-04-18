@@ -17,7 +17,8 @@ interface Voter {
   time: string | null;
 }
 
-const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api';
+const RENDER_URL = import.meta.env.VITE_RENDER_URL;
+const API_URL = RENDER_URL ? `${RENDER_URL}/api` : (window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api');
 
 export default function App() {
   const [voters, setVoters] = useState<Voter[]>([]);
@@ -48,10 +49,10 @@ export default function App() {
     fetchVoters();
 
     // Establish WebSocket Connection
-    // Leave empty for relative connection in production
-    const socket = window.location.hostname === 'localhost' 
-      ? io('http://localhost:3001') 
-      : io();
+    // Prioritize Render URL if available so Netlify uses it, otherwise relative
+    const socket = RENDER_URL 
+      ? io(RENDER_URL) 
+      : (window.location.hostname === 'localhost' ? io('http://localhost:3001') : io());
     
     socket.on('voter_updated', (updatedVoter: Voter) => {
       setVoters(prev => prev.map(v => v.id === updatedVoter.id ? updatedVoter : v));
