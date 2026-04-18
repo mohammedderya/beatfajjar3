@@ -17,7 +17,7 @@ interface Voter {
   time: string | null;
 }
 
-const RENDER_URL = import.meta.env.VITE_RENDER_URL;
+const RENDER_URL = 'https://betfajjar-app.onrender.com';
 const API_URL = RENDER_URL ? `${RENDER_URL}/api` : (window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api');
 
 export default function App() {
