@@ -331,6 +331,21 @@ export default function App() {
             <h1>قائمة بيت فجار الغد</h1>
             <h2>معاً نحو مستقبل أفضل</h2>
           </div>
+          <img 
+            src="/candidates.jpg" 
+            alt="المرشحين" 
+            style={{ 
+              height: '130px', 
+              objectFit: 'contain', 
+              borderRadius: '8px', 
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              marginLeft: '1rem'
+            }} 
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
         </div>
         <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
           نظام سريع وموثوق لتتبع عملية الاقتراع
@@ -338,28 +353,6 @@ export default function App() {
           {role === 'admin' && <span style={{display: 'inline-block', background: '#fee2e2', color: '#b91c1c', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '0.5rem'}}>صلاحية: مدير</span>}
         </p>
       </header>
-
-      {/* Candidates Poster */}
-      <div className="candidates-poster-container" style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <img 
-          src="/candidates.jpg" 
-          alt="مرشحي قائمة بيت فجار الغد" 
-          style={{ 
-            maxWidth: '100%', 
-            maxHeight: '400px', 
-            objectFit: 'contain', 
-            borderRadius: '12px', 
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-            border: '2px solid #e5e7eb'
-          }} 
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            // Fallback placeholder if image is not placed yet
-            target.onerror = null; 
-            target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="200" viewBox="0 0 800 200"><rect fill="%23f3f4f6" width="800" height="200"/><text fill="%239ca3af" font-family="sans-serif" font-size="20" dy="8" font-weight="bold" x="50%" y="50%" text-anchor="middle">الرجاء إضافة صورة candidates.jpg في مجلد public ليتم عرضها هنا</text></svg>';
-          }}
-        />
-      </div>
 
       {/* Stats row */}
       <div className="stats-grid">
