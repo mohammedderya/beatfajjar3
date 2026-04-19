@@ -293,7 +293,7 @@ if (fs.existsSync(clientDistPath)) {
 }
 
 // SPA Catch-all: serve React app for any route not handled by API
-app.get('*', (req, res) => {
+app.use((req, res) => {
   if (fs.existsSync(path.join(clientDistPath, 'index.html'))) {
     res.sendFile(path.join(clientDistPath, 'index.html'));
   } else {
