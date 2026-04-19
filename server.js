@@ -18,7 +18,7 @@ const io = new Server(server, {
   } 
 });
 
-// Deployment version v1.1
+// Deployment version v1.3
 const activeUsers = new Map(); // socketId -> { role }
 
 const broadcastActiveUsers = () => {
@@ -53,7 +53,25 @@ if (!fs.existsSync(uploadDir)) {
 
 const upload = multer({ dest: uploadDir });
 
-app.use(cors());
+const allowedOrigins = [
+  'https://beatfajjaralghad.netlify.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-auth-password', 'x-admin-secret'],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Serve static files from React app in production
@@ -228,7 +246,7 @@ app.post('/api/clear-votes', requireAdmin, async (req, res) => {
   }
 });
 
-// Health check and debug (Protected by admin if needed, but open for now)
+// Health check and debug
 app.get('/api/health', (req, res) => {
   let adminCount = 0;
   let staffCount = 0;
@@ -238,8 +256,18 @@ app.get('/api/health', (req, res) => {
   }
   res.json({ 
     status: 'ok', 
-    version: '1.2',
+    version: '1.3',
     activeUsers: { admins: adminCount, staff: staffCount, total: activeUsers.size }
+  });
+});
+
+// JSON fallback for unknown /api routes
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ 
+    error: 'API endpoint not found',
+    path: req.originalUrl,
+    method: req.method,
+    hint: 'This is a JSON fallback to prevent HTML error pages.'
   });
 });
 

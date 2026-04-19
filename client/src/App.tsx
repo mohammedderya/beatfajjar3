@@ -18,7 +18,42 @@ interface Voter {
 }
 
 const RENDER_URL = 'https://betfajjar-app.onrender.com';
-const API_URL = RENDER_URL ? `${RENDER_URL}/api` : (window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api');
+const API_URL = RENDER_URL ? `${RENDER_URL}/api` : '/api';
+
+// Robust fetch helper to handle retries, content-type checks, and raw logging
+const robustFetch = async (url: string, options: RequestInit, retries = 3): Promise<any> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        return { ok: response.ok, data, status: response.status };
+      } else {
+        // Not JSON! Log raw text for debugging
+        const rawText = await response.text();
+        console.error(`ABS-API-ERROR: Expected JSON but received: ${contentType}`, {
+          url,
+          status: response.status,
+          peek: rawText.substring(0, 200)
+        });
+        
+        if (i < retries - 1 && response.status >= 500) {
+          console.warn(`Retrying... (${i + 1}/${retries})`);
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+        
+        throw new Error(`Server returned non-JSON response (${response.status})`);
+      }
+    } catch (error: any) {
+      if (i === retries - 1) throw error;
+      console.warn(`Fetch attempt ${i + 1} failed: ${error.message}. Retrying...`);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+};
 
 export default function App() {
   const [password, setPassword] = useState(localStorage.getItem('auth_pass') || '');
@@ -42,13 +77,13 @@ export default function App() {
     setLoading(true);
     setLoginError('');
     try {
-      const res = await fetch(`${API_URL}/auth/login`, {
+      const { ok, data } = await robustFetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
       });
-      const data = await res.json();
-      if (res.ok) {
+      
+      if (ok) {
         setIsAuthenticated(true);
         setRole(data.role);
         roleRef.current = data.role;
@@ -60,8 +95,8 @@ export default function App() {
         setLoading(false);
         localStorage.removeItem('auth_pass');
       }
-    } catch (err) {
-      setLoginError('خطأ في الاتصال بالخادم');
+    } catch (err: any) {
+      setLoginError(`خطأ في الاتصال: ${err.message}`);
       setLoading(false);
     }
   };
@@ -103,13 +138,12 @@ export default function App() {
 
   const fetchVoters = async (currentPass: string) => {
     try {
-      const res = await fetch(`${API_URL}/voters`, {
+      const { ok, data, status } = await robustFetch(`${API_URL}/voters`, {
         headers: { 'x-auth-password': currentPass }
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (ok) {
         setVoters(data);
-      } else if (res.status === 401) {
+      } else if (status === 401) {
         handleLogout();
       }
     } catch (err) {
@@ -136,20 +170,19 @@ export default function App() {
     formData.append('file', file);
 
     try {
-      const res = await fetch(`${API_URL}/voters/import`, {
+      const { ok, data } = await robustFetch(`${API_URL}/voters/import`, {
         method: 'POST',
         headers: { 'x-auth-password': password },
         body: formData,
       });
-      const data = await res.json();
-      if (res.ok) {
+      if (ok) {
         alert(data.message);
         fetchVoters(password);
       } else {
         alert(`Error: ${data.error}`);
       }
-    } catch (err) {
-      alert('Failed to upload file');
+    } catch (err: any) {
+      alert(`Failed to upload file: ${err.message}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -160,19 +193,18 @@ export default function App() {
     if (!window.confirm('هل أنت متأكد من مسح جميع بيانات الناخبين؟ لا يمكن التراجع عن هذا الإجراء.')) return;
     
     try {
-      const res = await fetch(`${API_URL}/voters/reset`, {
+      const { ok, data } = await robustFetch(`${API_URL}/voters/reset`, {
         method: 'POST',
         headers: { 'x-auth-password': password }
       });
-      const data = await res.json();
-      if (res.ok) {
+      if (ok) {
         alert('تم مسح السجل بنجاح');
         fetchVoters(password);
       } else {
         alert(`Error: ${data.error}`);
       }
-    } catch (err) {
-      alert('Failed to reset database');
+    } catch (err: any) {
+      alert(`Failed to reset database: ${err.message}`);
     }
   };
 
@@ -181,41 +213,19 @@ export default function App() {
     
     setLoading(true);
     try {
-      // Try multiple paths for robustness during deployment rollout
-      const paths = [`${API_URL}/clear-votes`, `${API_URL}/voters/reset-votes`];
-      let success = false;
-      let lastError = '';
-
-      for (const path of paths) {
-        try {
-          const res = await fetch(path, {
-            method: 'POST',
-            headers: { 'x-auth-password': password, 'Content-Type': 'application/json' }
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            alert(data.message || 'تم التصفير بنجاح');
-            fetchVoters(password);
-            success = true;
-            break;
-          } else {
-            const contentType = res.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-              const data = await res.json();
-              lastError = data.error || res.statusText;
-            } else {
-              lastError = "Server returned HTML instead of JSON. Deployment might be in progress.";
-            }
-          }
-        } catch (innerErr) {
-          lastError = innerErr instanceof Error ? innerErr.message : String(innerErr);
-        }
+      const { ok, data } = await robustFetch(`${API_URL}/clear-votes`, {
+        method: 'POST',
+        headers: { 'x-auth-password': password, 'Content-Type': 'application/json' }
+      });
+      
+      if (ok) {
+        alert(data.message || 'تم التصفير بنجاح');
+        fetchVoters(password);
+      } else {
+        alert(`Failed to reset voting status: ${data.error}`);
       }
-
-      if (!success) {
-        alert(`Failed to reset voting status: ${lastError}`);
-      }
+    } catch (err: any) {
+      alert(`Failed to reset voting status: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -226,19 +236,17 @@ export default function App() {
     setProcessingId(id);
     
     try {
-      const res = await fetch(`${API_URL}/voters/vote/${id}`, { 
+      const { ok, data } = await robustFetch(`${API_URL}/voters/vote/${id}`, { 
         method: 'POST',
         headers: { 'x-auth-password': password }
       });
-      if (res.ok) {
-        const updatedVoter = await res.json();
-        setVoters(prev => prev.map(v => v.id === id ? updatedVoter : v));
+      if (ok) {
+        setVoters(prev => prev.map(v => v.id === id ? data : v));
       } else {
-        const errData = await res.json();
-        alert(`Error: ${errData.error}`);
+        alert(`Error: ${data.error}`);
       }
-    } catch (err) {
-      alert('Failed to mark voter');
+    } catch (err: any) {
+      alert(`Failed to mark voter: ${err.message}`);
     } finally {
       setProcessingId(null);
     }
