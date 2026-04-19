@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Unified Voter Tracking System",
   "scripts": {
-    "build": "cd client && npm install --include=dev && npm run build && cd ../server && npm install",
+    "build": "echo 'Build skipped: using pre-built dist folder'",
     "start": "cd server && node index.js"
   },
   "keywords": [],

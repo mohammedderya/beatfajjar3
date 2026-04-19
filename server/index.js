@@ -30,6 +30,7 @@ const broadcastActiveUsers = () => {
 
 io.on('connection', (socket) => {
   socket.on('register', (data) => {
+    console.log('Registering user:', data);
     if (data && data.role) {
       activeUsers.set(socket.id, { role: data.role });
       broadcastActiveUsers();
