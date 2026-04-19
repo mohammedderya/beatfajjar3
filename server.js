@@ -220,11 +220,18 @@ app.post('/api/voters/vote/:id', requireAuth, async (req, res) => {
 // Route /api/reset-vote required by user
 app.post('/api/reset-vote', async (req, res) => {
   try {
+    const password = req.headers['x-auth-password'];
+    const adminSecret = process.env.ADMIN_SECRET;
+    
+    if (adminSecret && password !== adminSecret) { 
+        return res.status(401).json({ error: "كلمة مرور غير صحيحة" });
+    }
+
     const result = await db.query('UPDATE voters SET voted = FALSE, time = NULL');
-    res.json({ success: true, message: 'تم تصفير سجل التصويت بنجاح', affected: result.rowCount });
-  } catch (err) {
-    console.error("Reset vote error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(200).json({ success: true, message: "تم تصفير سجل التصويت بنجاح", affected: result.rowCount });
+  } catch (error) {
+    console.error("Reset error:", error);
+    res.status(500).json({ error: "فشل في تصفير السجل: " + error.message });
   }
 });
 
