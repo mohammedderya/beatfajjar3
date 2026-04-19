@@ -31,20 +31,57 @@ if (fs.existsSync(clientDistPath)) {
   app.use(express.static(clientDistPath));
 }
 
-// Middleware to check ADMIN_SECRET
-const authCheck = (req, res, next) => {
-  const secret = req.headers['x-admin-secret'];
-  const expected = process.env.ADMIN_SECRET;
+// Middleware to check authentication (Admin or Staff)
+const requireAuth = (req, res, next) => {
+  const password = req.headers['x-auth-password'];
+  const adminSecret = process.env.ADMIN_SECRET;
+  const staffSecret = process.env.STAFF_SECRET;
   
-  if (expected && secret !== expected) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid Admin Secret' });
+  if (!adminSecret && !staffSecret) {
+    return next();
   }
-  next();
+
+  if ((adminSecret && password === adminSecret) || (staffSecret && password === staffSecret)) {
+    return next();
+  }
+  
+  return res.status(401).json({ error: 'Unauthorized' });
+};
+
+// Middleware to check admin specifically
+const requireAdmin = (req, res, next) => {
+  const password = req.headers['x-auth-password'] || req.headers['x-admin-secret'];
+  const adminSecret = process.env.ADMIN_SECRET;
+
+  if (!adminSecret) return next();
+
+  if (password === adminSecret) {
+    return next();
+  }
+
+  return res.status(401).json({ error: 'Unauthorized: Requires Admin Access' });
 };
 
 // API Routes
+app.post('/api/auth/login', (req, res) => {
+  const { password } = req.body;
+  const adminSecret = process.env.ADMIN_SECRET;
+  const staffSecret = process.env.STAFF_SECRET;
+
+  if (!adminSecret && !staffSecret) {
+     return res.json({ role: 'admin' });
+  }
+
+  if (adminSecret && password === adminSecret) {
+     return res.json({ role: 'admin' });
+  } else if (staffSecret && password === staffSecret) {
+     return res.json({ role: 'staff' });
+  }
+
+  res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
+});
 // Get all voters
-app.get('/api/voters', async (req, res) => {
+app.get('/api/voters', requireAuth, async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM voters ORDER BY id ASC');
     res.json(result.rows);
@@ -54,7 +91,7 @@ app.get('/api/voters', async (req, res) => {
 });
 
 // Import voters from CSV/Excel (Protected)
-app.post('/api/voters/import', authCheck, upload.single('file'), async (req, res) => {
+app.post('/api/voters/import', requireAdmin, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   try {
@@ -107,7 +144,7 @@ app.post('/api/voters/import', authCheck, upload.single('file'), async (req, res
 });
 
 // Mark as voted (Atomic update in Postgres)
-app.post('/api/voters/vote/:id', async (req, res) => {
+app.post('/api/voters/vote/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const now = new Date().toISOString();
   
@@ -131,7 +168,7 @@ app.post('/api/voters/vote/:id', async (req, res) => {
 });
 
 // Reset database (Protected)
-app.post('/api/voters/reset', authCheck, async (req, res) => {
+app.post('/api/voters/reset', requireAdmin, async (req, res) => {
   try {
     await db.query('DELETE FROM voters');
     res.json({ message: 'All voters cleared' });
