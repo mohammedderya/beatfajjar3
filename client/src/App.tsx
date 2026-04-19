@@ -182,20 +182,45 @@ export default function App() {
   const handleResetVotes = async () => {
     if (!window.confirm('هل أنت متأكد من تصفير سجل التصويت؟ سيتم إرجاع جميع الناخبين إلى حالة "لم يصوت".')) return;
     
+    setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/voters/reset-votes`, {
-        method: 'POST',
-        headers: { 'x-auth-password': password }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        fetchVoters(password);
-      } else {
-        alert(`Error: ${data.error}`);
+      // Try multiple paths for robustness during deployment rollout
+      const paths = [`${API_URL}/clear-votes`, `${API_URL}/voters/reset-votes`];
+      let success = false;
+      let lastError = '';
+
+      for (const path of paths) {
+        try {
+          const res = await fetch(path, {
+            method: 'POST',
+            headers: { 'x-auth-password': password, 'Content-Type': 'application/json' }
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            alert(data.message || 'تم التصفير بنجاح');
+            fetchVoters(password);
+            success = true;
+            break;
+          } else {
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+              const data = await res.json();
+              lastError = data.error || res.statusText;
+            } else {
+              lastError = "Server returned HTML instead of JSON. Deployment might be in progress.";
+            }
+          }
+        } catch (innerErr) {
+          lastError = innerErr instanceof Error ? innerErr.message : String(innerErr);
+        }
       }
-    } catch (err) {
-      alert(`Failed to reset voting status: ${err instanceof Error ? err.message : String(err)}`);
+
+      if (!success) {
+        alert(`Failed to reset voting status: ${lastError}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

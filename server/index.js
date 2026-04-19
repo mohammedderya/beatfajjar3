@@ -58,6 +58,12 @@ if (fs.existsSync(clientDistPath)) {
   app.use(express.static(clientDistPath));
 }
 
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
 // Middleware to check authentication (Admin or Staff)
 const requireAuth = (req, res, next) => {
   const password = req.headers['x-auth-password'];
@@ -206,11 +212,14 @@ app.post('/api/voters/reset', requireAdmin, async (req, res) => {
 });
 
 // Reset ONLY the voted status (Protected)
-app.post('/api/voters/reset-votes', requireAdmin, async (req, res) => {
+app.post('/api/clear-votes', requireAdmin, async (req, res) => {
+  console.log("Attempting to clear all votes...");
   try {
-    await db.query('UPDATE voters SET voted = FALSE, time = NULL');
-    res.json({ message: 'تم تصفير سجل التصويت بنجاح' });
+    const result = await db.query('UPDATE voters SET voted = FALSE, time = NULL');
+    console.log("Votes cleared successfully:", result.rowCount);
+    res.json({ message: 'تم تصفير سجل التصويت بنجاح', affected: result.rowCount });
   } catch (err) {
+    console.error("Clear votes error:", err);
     res.status(500).json({ error: err.message });
   }
 });
