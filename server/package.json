@@ -1,15 +1,11 @@
 {
-  "name": "server",
+  "name": "betfajjar-project",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Unified Voter Tracking System",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "echo 'Build skipped: using pre-built dist folder'",
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -22,5 +18,8 @@
     "socket.io-client": "^4.8.3",
     "sqlite3": "^6.0.1",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
   }
 }
