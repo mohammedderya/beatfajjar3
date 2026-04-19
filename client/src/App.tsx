@@ -320,6 +320,7 @@ export default function App() {
         </button>
         <div className="header-top">
           <img src="/logo.png" alt="شعار قائمة بيت فجار الغد" className="main-logo" />
+          <div style={{ position: 'absolute', bottom: '10px', right: '10px', fontSize: '0.7rem', color: '#ccc' }}>v1.3</div>
           <div className="election-number-box">
             <span className="election-number-label">الرقم الانتخابي</span>
             <span>3</span>
