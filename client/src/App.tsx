@@ -297,9 +297,13 @@ export default function App() {
             <span className="stat-value" style={{ color: '#6d28d9' }}>{activeUsers.total}</span>
           </div>
           <span className="stat-title">متصل الآن</span>
-          {role === 'admin' && (
-            <div style={{ fontSize: '0.75rem', color: '#6d28d9', marginTop: '0.25rem' }}>
+          {role === 'admin' ? (
+            <div style={{ fontSize: '0.85rem', color: '#6d28d9', marginTop: '0.25rem', fontWeight: 600 }}>
               مدراء: {activeUsers.admins} | مساعدين: {activeUsers.staff}
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.85rem', color: '#6d28d9', marginTop: '0.25rem', fontWeight: 600 }}>
+              عدد المساعدين: {activeUsers.staff}
             </div>
           )}
         </div>
