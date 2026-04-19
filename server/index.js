@@ -15,7 +15,7 @@ const io = new Server(server, {
   cors: { origin: "*" } 
 });
 
-// Track active connected users
+// Deployment version v1.1
 const activeUsers = new Map(); // socketId -> { role }
 
 const broadcastActiveUsers = () => {

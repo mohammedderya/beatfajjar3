@@ -186,7 +186,7 @@ export default function App() {
         alert(`Error: ${data.error}`);
       }
     } catch (err) {
-      alert('Failed to reset voting status');
+      alert(`Failed to reset voting status: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
