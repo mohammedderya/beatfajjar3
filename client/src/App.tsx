@@ -213,9 +213,12 @@ export default function App() {
     
     setLoading(true);
     try {
-      const { ok, data } = await robustFetch(`${API_URL}/clear-votes`, {
+      const { ok, data } = await robustFetch(`${API_URL}/reset-vote`, {
         method: 'POST',
-        headers: { 'x-auth-password': password, 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-auth-password': password
+        }
       });
       
       if (ok) {

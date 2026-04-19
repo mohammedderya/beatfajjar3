@@ -74,12 +74,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// Serve static files from React app in production
-const clientDistPath = path.join(__dirname, 'client/dist');
-if (fs.existsSync(clientDistPath)) {
-  app.use(express.static(clientDistPath));
-}
-
 // Logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
@@ -223,6 +217,17 @@ app.post('/api/voters/vote/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Route /api/reset-vote required by user
+app.post('/api/reset-vote', async (req, res) => {
+  try {
+    const result = await db.query('UPDATE voters SET voted = FALSE, time = NULL');
+    res.json({ success: true, message: 'تم تصفير سجل التصويت بنجاح', affected: result.rowCount });
+  } catch (err) {
+    console.error("Reset vote error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Reset database (Full delete) (Protected)
 app.post('/api/voters/reset', requireAdmin, async (req, res) => {
   try {
@@ -256,23 +261,32 @@ app.get('/api/health', (req, res) => {
   }
   res.json({ 
     status: 'ok', 
-    version: '1.3',
+    version: '1.4',
     activeUsers: { admins: adminCount, staff: staffCount, total: activeUsers.size }
   });
 });
 
-// JSON fallback for unknown /api routes
-app.all('/api/*', (req, res) => {
-  res.status(404).json({ 
-    error: 'API endpoint not found',
-    path: req.originalUrl,
-    method: req.method,
-    hint: 'This is a JSON fallback to prevent HTML error pages.'
-  });
+// Strict JSON error handler for all /api routes
+app.use('/api', (err, req, res, next) => {
+  console.error('API Error:', err);
+  res.status(500).json({ error: 'Internal Server Error', details: err.message });
 });
 
+// Strict JSON fallback for all unknown /api routes
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
+
+// --- API routes end here ---
+
+// Serve static files from React app in production
+const clientDistPath = path.join(__dirname, 'client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+}
+
 // SPA Catch-all: serve React app for any route not handled by API
-app.use((req, res) => {
+app.get('*', (req, res) => {
   if (fs.existsSync(path.join(clientDistPath, 'index.html'))) {
     res.sendFile(path.join(clientDistPath, 'index.html'));
   } else {
