@@ -15,6 +15,33 @@ const io = new Server(server, {
   cors: { origin: "*" } 
 });
 
+// Track active connected users
+const activeUsers = new Map(); // socketId -> { role }
+
+const broadcastActiveUsers = () => {
+  let adminCount = 0;
+  let staffCount = 0;
+  for (const user of activeUsers.values()) {
+    if (user.role === 'admin') adminCount++;
+    else if (user.role === 'staff') staffCount++;
+  }
+  io.emit('active_users', { admins: adminCount, staff: staffCount, total: adminCount + staffCount });
+};
+
+io.on('connection', (socket) => {
+  socket.on('register', (data) => {
+    if (data && data.role) {
+      activeUsers.set(socket.id, { role: data.role });
+      broadcastActiveUsers();
+    }
+  });
+
+  socket.on('disconnect', () => {
+    activeUsers.delete(socket.id);
+    broadcastActiveUsers();
+  });
+});
+
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
@@ -80,6 +107,7 @@ app.post('/api/auth/login', (req, res) => {
 
   res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
 });
+
 // Get all voters
 app.get('/api/voters', requireAuth, async (req, res) => {
   try {

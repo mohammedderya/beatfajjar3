@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Upload, CheckCircle2, XCircle, AlertTriangle, Lock } from 'lucide-react';
+import { Search, Upload, CheckCircle2, XCircle, AlertTriangle, Lock, Users } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 interface Voter {
@@ -33,8 +33,10 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [confirmVoter, setConfirmVoter] = useState<Voter | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [activeUsers, setActiveUsers] = useState<{admins: number, staff: number, total: number}>({admins: 0, staff: 0, total: 0});
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const roleRef = useRef<string | null>(null);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -50,9 +52,10 @@ export default function App() {
       if (res.ok) {
         setIsAuthenticated(true);
         setRole(data.role);
+        roleRef.current = data.role;
         localStorage.setItem('auth_pass', password);
         fetchVoters(password);
-        setupSocket();
+        setupSocket(data.role);
       } else {
         setLoginError(data.error || 'كلمة المرور غير صحيحة');
         setLoading(false);
@@ -72,13 +75,21 @@ export default function App() {
     }
   }, []);
 
-  const setupSocket = () => {
+  const setupSocket = (userRole: string) => {
     const socket = RENDER_URL 
       ? io(RENDER_URL) 
       : (window.location.hostname === 'localhost' ? io('http://localhost:3001') : io());
     
+    socket.on('connect', () => {
+      socket.emit('register', { role: userRole });
+    });
+
     socket.on('voter_updated', (updatedVoter: Voter) => {
       setVoters(prev => prev.map(v => v.id === updatedVoter.id ? updatedVoter : v));
+    });
+
+    socket.on('active_users', (data: {admins: number, staff: number, total: number}) => {
+      setActiveUsers(data);
     });
 
     return socket;
@@ -279,6 +290,18 @@ export default function App() {
         <div className="stat-card">
           <span className="stat-value stat-not-voted">{stats.notVoted}</span>
           <span className="stat-title">لم يصوت</span>
+        </div>
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ede9fe, #e0e7ff)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Users size={22} color="#6d28d9" />
+            <span className="stat-value" style={{ color: '#6d28d9' }}>{activeUsers.total}</span>
+          </div>
+          <span className="stat-title">متصل الآن</span>
+          {role === 'admin' && (
+            <div style={{ fontSize: '0.75rem', color: '#6d28d9', marginTop: '0.25rem' }}>
+              مدراء: {activeUsers.admins} | مساعدين: {activeUsers.staff}
+            </div>
+          )}
         </div>
       </div>
 
