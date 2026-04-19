@@ -6,9 +6,19 @@
     "build": "echo 'Build skipped: using pre-built dist folder'",
     "start": "cd server && node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "pdf-parse": "^1.1.1",
+    "pdf2json": "^4.0.3",
+    "pg": "^8.20.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "sqlite3": "^6.0.1",
+    "xlsx": "^0.18.5"
+  },
   "devDependencies": {
     "vite": "^6.0.0"
   }
