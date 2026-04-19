@@ -215,6 +215,21 @@ app.post('/api/voters/reset-votes', requireAdmin, async (req, res) => {
   }
 });
 
+// Health check and debug (Protected by admin if needed, but open for now)
+app.get('/api/health', (req, res) => {
+  let adminCount = 0;
+  let staffCount = 0;
+  for (const user of activeUsers.values()) {
+    if (user.role === 'admin') adminCount++;
+    else if (user.role === 'staff') staffCount++;
+  }
+  res.json({ 
+    status: 'ok', 
+    version: '1.2',
+    activeUsers: { admins: adminCount, staff: staffCount, total: activeUsers.size }
+  });
+});
+
 // SPA Catch-all: serve React app for any route not handled by API
 app.use((req, res) => {
   if (fs.existsSync(path.join(clientDistPath, 'index.html'))) {

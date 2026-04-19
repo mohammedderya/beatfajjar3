@@ -76,11 +76,16 @@ export default function App() {
   }, []);
 
   const setupSocket = (userRole: string) => {
-    const socket = RENDER_URL 
-      ? io(RENDER_URL) 
-      : (window.location.hostname === 'localhost' ? io('http://localhost:3001') : io());
+    if (!RENDER_URL && window.location.hostname !== 'localhost') return null;
+
+    const socket = io(RENDER_URL || '', {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+    });
     
     socket.on('connect', () => {
+      console.log('Socket connected successfully');
       socket.emit('register', { role: userRole });
     });
 
@@ -90,6 +95,10 @@ export default function App() {
 
     socket.on('active_users', (data: {admins: number, staff: number, total: number}) => {
       setActiveUsers(data);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
     });
 
     return socket;
