@@ -217,6 +217,28 @@ app.post('/api/voters/vote/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Undo vote (Atomic update in Postgres)
+app.post('/api/voters/unvote/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const updateResult = await db.query(
+      'UPDATE voters SET voted = FALSE, time = NULL WHERE id = $1 AND voted = TRUE RETURNING *',
+      [id]
+    );
+
+    if (updateResult.rowCount === 0) {
+      return res.status(400).json({ error: 'Voter not found or not voted' });
+    }
+
+    const updatedRow = updateResult.rows[0];
+    io.emit('voter_updated', updatedRow);
+    res.json(updatedRow);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Route /api/reset-vote required by user
 app.post('/api/reset-vote', async (req, res) => {
   try {

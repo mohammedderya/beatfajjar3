@@ -254,6 +254,27 @@ export default function App() {
     }
   };
 
+  const unmarkVoter = async (id: number) => {
+    if (!window.confirm('هل أنت متأكد من التراجع عن تسجيل تصويت هذا الناخب؟')) return;
+    
+    setProcessingId(id);
+    try {
+      const { ok, data } = await robustFetch(`${API_URL}/voters/unvote/${id}`, { 
+        method: 'POST',
+        headers: { 'x-auth-password': password }
+      });
+      if (ok) {
+        setVoters(prev => prev.map(v => v.id === id ? data : v));
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err: any) {
+      alert(`Network error: ${err.message}`);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   // Derived state
   const stats = useMemo(() => {
     const total = voters.length;
@@ -489,15 +510,29 @@ export default function App() {
                     )}
                   </td>
                   <td>
-                    <button 
-                      className={`btn ${voter.voted ? 'btn-filter' : 'btn-primary'}`}
-                      disabled={voter.voted || processingId === voter.id}
-                      onClick={() => !voter.voted && setConfirmVoter(voter)}
-                    >
-                      {processingId === voter.id ? (
-                        <><div className="loading-spinner" style={{width: '1rem', height: '1rem', borderWidth: '2px', marginRight: '0.5rem'}}/> جاري المعالجة...</>
-                      ) : voter.voted ? 'مكتمل' : 'تسجيل حضور'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <button 
+                        className={`btn ${voter.voted ? 'btn-success' : 'btn-primary'}`}
+                        disabled={voter.voted || processingId === voter.id}
+                        onClick={() => !voter.voted && setConfirmVoter(voter)}
+                      >
+                        {processingId === voter.id ? (
+                          <><div className="loading-spinner" style={{width: '1rem', height: '1rem', borderWidth: '2px', marginRight: '0.5rem'}}/> جاري المعالجة...</>
+                        ) : voter.voted ? 'مكتمل' : 'تسجيل حضور'}
+                      </button>
+                      
+                      {voter.voted && (
+                        <button 
+                          className="btn btn-filter" 
+                          style={{ padding: '0.5rem', color: 'var(--danger)', fontSize: '0.85rem' }}
+                          onClick={() => unmarkVoter(voter.id)}
+                          disabled={processingId === voter.id}
+                          title="التراجع عن التصويت"
+                        >
+                          تراجع
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
