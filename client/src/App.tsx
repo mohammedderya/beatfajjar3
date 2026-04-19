@@ -170,6 +170,26 @@ export default function App() {
     }
   };
 
+  const handleResetVotes = async () => {
+    if (!window.confirm('هل أنت متأكد من تصفير سجل التصويت؟ سيتم إرجاع جميع الناخبين إلى حالة "لم يصوت".')) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/voters/reset-votes`, {
+        method: 'POST',
+        headers: { 'x-auth-password': password }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        fetchVoters(password);
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      alert('Failed to reset voting status');
+    }
+  };
+
   const markVoter = async (id: number) => {
     setConfirmVoter(null);
     setProcessingId(id);
@@ -361,10 +381,17 @@ export default function App() {
             </label>
             <button 
               className="btn btn-filter" 
+              style={{ marginRight: '0.5rem', color: 'var(--primary)' }}
+              onClick={handleResetVotes}
+            >
+              تصفير سجل التصويت
+            </button>
+            <button 
+              className="btn btn-filter" 
               style={{ marginRight: '0.5rem', color: 'var(--danger)' }}
               onClick={handleReset}
             >
-              إفراغ السجل
+              حذف سجل الناخبين
             </button>
           </div>
         )}

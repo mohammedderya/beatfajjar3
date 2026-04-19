@@ -195,11 +195,21 @@ app.post('/api/voters/vote/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Reset database (Protected)
+// Reset database (Full delete) (Protected)
 app.post('/api/voters/reset', requireAdmin, async (req, res) => {
   try {
     await db.query('DELETE FROM voters');
-    res.json({ message: 'All voters cleared' });
+    res.json({ message: 'تم مسح وحذف جميع الناخبين بشكل كامل' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Reset ONLY the voted status (Protected)
+app.post('/api/voters/reset-votes', requireAdmin, async (req, res) => {
+  try {
+    await db.query('UPDATE voters SET voted = FALSE, time = NULL');
+    res.json({ message: 'تم تصفير سجل التصويت بنجاح' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
