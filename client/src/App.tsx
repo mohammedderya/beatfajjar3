@@ -356,11 +356,12 @@ export default function App() {
             src="/candidates.jpg" 
             alt="المرشحين" 
             style={{ 
-              height: '130px', 
+              height: '140px', 
               objectFit: 'contain', 
               borderRadius: '8px', 
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              marginLeft: '1rem'
+              marginLeft: '1rem',
+              marginTop: '1.5rem'
             }} 
             onError={(e) => {
               const target = e.target as HTMLImageElement;
