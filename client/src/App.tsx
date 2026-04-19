@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Upload, CheckCircle2, XCircle, AlertTriangle, Lock, Users } from 'lucide-react';
+import { Search, Upload, CheckCircle2, XCircle, AlertTriangle, Lock } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 interface Voter {
@@ -33,7 +33,6 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [confirmVoter, setConfirmVoter] = useState<Voter | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
-  const [activeUsers, setActiveUsers] = useState<{admins: number, staff: number, total: number}>({admins: 0, staff: 0, total: 0});
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const roleRef = useRef<string | null>(null);
@@ -93,9 +92,7 @@ export default function App() {
       setVoters(prev => prev.map(v => v.id === updatedVoter.id ? updatedVoter : v));
     });
 
-    socket.on('active_users', (data: {admins: number, staff: number, total: number}) => {
-      setActiveUsers(data);
-    });
+
 
     socket.on('connect_error', (err) => {
       console.error('Socket connection error:', err);
@@ -345,22 +342,7 @@ export default function App() {
           <span className="stat-value stat-not-voted">{stats.notVoted}</span>
           <span className="stat-title">لم يصوت</span>
         </div>
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ede9fe, #e0e7ff)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <Users size={22} color="#6d28d9" />
-            <span className="stat-value" style={{ color: '#6d28d9' }}>{activeUsers.total}</span>
-          </div>
-          <span className="stat-title">متصل الآن</span>
-          {role === 'admin' ? (
-            <div style={{ fontSize: '0.85rem', color: '#6d28d9', marginTop: '0.25rem', fontWeight: 600 }}>
-              مدراء: {activeUsers.admins} | مساعدين: {activeUsers.staff}
-            </div>
-          ) : (
-            <div style={{ fontSize: '0.85rem', color: '#6d28d9', marginTop: '0.25rem', fontWeight: 600 }}>
-              عدد المساعدين: {activeUsers.staff}
-            </div>
-          )}
-        </div>
+
       </div>
 
       {/* Controls */}
