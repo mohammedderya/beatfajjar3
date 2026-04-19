@@ -4,7 +4,7 @@
   "description": "Unified Voter Tracking System",
   "scripts": {
     "build": "echo 'Build skipped: using pre-built dist folder'",
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
