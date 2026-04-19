@@ -68,8 +68,6 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [confirmVoter, setConfirmVoter] = useState<Voter | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
-  const [showCandidatesModal, setShowCandidatesModal] = useState(false);
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const roleRef = useRef<string | null>(null);
 
@@ -322,9 +320,6 @@ export default function App() {
         <button onClick={handleLogout} className="btn" style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#f3f4f6', color: 'var(--text-dark)' }}>
           تسجيل الخروج
         </button>
-        <button onClick={() => setShowCandidatesModal(true)} className="btn btn-primary" style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
-          عرض مرشحي القائمة
-        </button>
         <div className="header-top">
           <img src="/logo.png" alt="شعار قائمة بيت فجار الغد" className="main-logo" />
           <div style={{ position: 'absolute', bottom: '10px', right: '10px', fontSize: '0.7rem', color: '#ccc' }}>v1.3</div>
@@ -343,6 +338,28 @@ export default function App() {
           {role === 'admin' && <span style={{display: 'inline-block', background: '#fee2e2', color: '#b91c1c', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '0.5rem'}}>صلاحية: مدير</span>}
         </p>
       </header>
+
+      {/* Candidates Poster */}
+      <div className="candidates-poster-container" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <img 
+          src="/candidates.jpg" 
+          alt="مرشحي قائمة بيت فجار الغد" 
+          style={{ 
+            maxWidth: '100%', 
+            maxHeight: '400px', 
+            objectFit: 'contain', 
+            borderRadius: '12px', 
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            border: '2px solid #e5e7eb'
+          }} 
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            // Fallback placeholder if image is not placed yet
+            target.onerror = null; 
+            target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="200" viewBox="0 0 800 200"><rect fill="%23f3f4f6" width="800" height="200"/><text fill="%239ca3af" font-family="sans-serif" font-size="20" dy="8" font-weight="bold" x="50%" y="50%" text-anchor="middle">الرجاء إضافة صورة candidates.jpg في مجلد public ليتم عرضها هنا</text></svg>';
+          }}
+        />
+      </div>
 
       {/* Stats row */}
       <div className="stats-grid">
@@ -502,28 +519,6 @@ export default function App() {
           </table>
         )}
       </div>
-
-      {/* Candidates Modal */}
-      {showCandidatesModal && (
-        <div className="modal-overlay" onClick={() => setShowCandidatesModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%', padding: '1rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)' }}>مرشحي قائمة بيت فجار الغد</h3>
-              <button className="btn" style={{ background: '#f3f4f6', color: 'var(--text-dark)' }} onClick={() => setShowCandidatesModal(false)}>إغلاق</button>
-            </div>
-            <img 
-              src="/candidates.jpg" 
-              alt="مرشحي القائمة" 
-              style={{ width: '100%', height: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }} 
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null; 
-                target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="300" viewBox="0 0 800 300"><rect fill="%23f3f4f6" width="800" height="300"/><text fill="%239ca3af" font-family="sans-serif" font-size="24" dy="10.5" font-weight="bold" x="50%" y="50%" text-anchor="middle">الرجاء إضافة صورة candidates.jpg في مجلد public</text></svg>';
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Confirmation Modal */}
       {confirmVoter && (
