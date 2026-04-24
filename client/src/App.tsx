@@ -369,11 +369,28 @@ export default function App() {
             }}
           />
         </div>
-        <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
-          نظام سريع وموثوق لتتبع عملية الاقتراع
-          {role === 'staff' && <span style={{display: 'inline-block', background: '#ede9fe', color: '#6d28d9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '0.5rem'}}>صلاحية: مساعد</span>}
-          {role === 'admin' && <span style={{display: 'inline-block', background: '#fee2e2', color: '#b91c1c', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '0.5rem'}}>صلاحية: مدير</span>}
-        </p>
+        <div style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
+          <div>نظام سريع وموثوق لتتبع عملية الاقتراع</div>
+          <div style={{ marginTop: '0.5rem' }}>
+            {role === 'staff' && <span style={{display: 'inline-block', background: '#ede9fe', color: '#6d28d9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '0.5rem'}}>صلاحية: مساعد</span>}
+            {role === 'admin' && <span style={{display: 'inline-block', background: '#fee2e2', color: '#b91c1c', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', marginRight: '0.5rem'}}>صلاحية: مدير</span>}
+          </div>
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '0.6rem 1.5rem', 
+            background: 'linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)',
+            color: 'white',
+            borderRadius: '50px',
+            fontSize: '0.9rem',
+            fontWeight: '800',
+            display: 'inline-block',
+            boxShadow: '0 4px 15px rgba(27, 94, 32, 0.3)',
+            border: '2px solid #f9d923'
+          }}>
+            <span style={{ marginLeft: '8px' }}>🛠️</span>
+            صنع بواسطة المهندس محمد ابراهيم عبد ربه الديريه
+          </div>
+        </div>
       </header>
 
       {/* Stats row */}
@@ -579,6 +596,7 @@ export default function App() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
