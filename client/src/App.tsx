@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Upload, CheckCircle2, XCircle, AlertTriangle, Lock } from 'lucide-react';
+import { Search, Upload, CheckCircle2, XCircle, AlertTriangle, Lock, UserPlus } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 interface Voter {
@@ -17,8 +17,12 @@ interface Voter {
   time: string | null;
 }
 
-const RENDER_URL = 'https://betfajjar-app.onrender.com';
-const API_URL = RENDER_URL ? `${RENDER_URL}/api` : '/api';
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3001/api' 
+  : 'https://betfajjar-app.onrender.com/api';
+const RENDER_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3001'
+  : 'https://betfajjar-app.onrender.com';
 
 // Robust fetch helper to handle retries, content-type checks, and raw logging
 const robustFetch = async (url: string, options: RequestInit, retries = 3): Promise<any> => {
@@ -67,6 +71,16 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [confirmVoter, setConfirmVoter] = useState<Voter | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newVoter, setNewVoter] = useState({
+    first_name: '',
+    father_name: '',
+    grand_name: '',
+    family_name: '',
+    national_id: '',
+    school: '',
+    markAsVoted: false
+  });
   const [processingId, setProcessingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const roleRef = useRef<string | null>(null);
@@ -275,6 +289,41 @@ export default function App() {
     }
   };
 
+  const handleAddVoter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { ok, data } = await robustFetch(`${API_URL}/voters`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-auth-password': password 
+        },
+        body: JSON.stringify(newVoter)
+      });
+      if (ok) {
+        setVoters(prev => [...prev, data]);
+        setIsAddModalOpen(false);
+        setNewVoter({
+          first_name: '',
+          father_name: '',
+          grand_name: '',
+          family_name: '',
+          national_id: '',
+          school: '',
+          markAsVoted: false
+        });
+        alert('تم إضافة الناخب بنجاح');
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err: any) {
+      alert(`Failed to add voter: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Derived state
   const stats = useMemo(() => {
     const total = voters.length;
@@ -422,6 +471,20 @@ export default function App() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          <button 
+            className="btn btn-primary" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem', 
+              whiteSpace: 'nowrap',
+              marginRight: '0.5rem'
+            }}
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <UserPlus size={18} />
+            إضافة ناخب جديد
+          </button>
         </div>
 
         <div className="filter-buttons">
@@ -593,6 +656,108 @@ export default function App() {
                 تأكيد وتسجيل
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Add Voter Modal */}
+      {isAddModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <UserPlus />
+              إضافة ناخب جديد
+            </h2>
+            <form onSubmit={handleAddVoter}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label className="stat-title" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>الاسم الأول</label>
+                  <input 
+                    type="text" 
+                    className="search-input" 
+                    required 
+                    value={newVoter.first_name}
+                    onChange={e => setNewVoter({...newVoter, first_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="stat-title" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>اسم الأب</label>
+                  <input 
+                    type="text" 
+                    className="search-input" 
+                    required 
+                    value={newVoter.father_name}
+                    onChange={e => setNewVoter({...newVoter, father_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="stat-title" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>اسم الجد</label>
+                  <input 
+                    type="text" 
+                    className="search-input" 
+                    value={newVoter.grand_name}
+                    onChange={e => setNewVoter({...newVoter, grand_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="stat-title" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>العائلة / اللقب</label>
+                  <input 
+                    type="text" 
+                    className="search-input" 
+                    required 
+                    value={newVoter.family_name}
+                    onChange={e => setNewVoter({...newVoter, family_name: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="stat-title" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>رقم الهوية</label>
+                <input 
+                  type="text" 
+                  className="search-input" 
+                  value={newVoter.national_id}
+                  onChange={e => setNewVoter({...newVoter, national_id: e.target.value})}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label className="stat-title" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>المدرسة (اختياري)</label>
+                <input 
+                  type="text" 
+                  className="search-input" 
+                  value={newVoter.school}
+                  onChange={e => setNewVoter({...newVoter, school: e.target.value})}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => setNewVoter({...newVoter, markAsVoted: !newVoter.markAsVoted})}>
+                <input 
+                  type="checkbox" 
+                  checked={newVoter.markAsVoted}
+                  onChange={e => setNewVoter({...newVoter, markAsVoted: e.target.checked})}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--primary)' }}>إضافة وتسجيل كحاضر (صوت) فوراً</span>
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setIsAddModalOpen(false)}
+                >
+                  إلغاء
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'جاري الإضافة...' : 'إضافة الناخب'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

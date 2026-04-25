@@ -140,6 +140,28 @@ app.get('/api/voters', requireAuth, async (req, res) => {
   }
 });
 
+// Add a single voter manually
+app.post('/api/voters', requireAuth, async (req, res) => {
+  const { first_name, father_name, grand_name, family_name, national_id, school, markAsVoted } = req.body;
+  
+  try {
+    const now = markAsVoted ? new Date().toISOString() : null;
+    const voted = markAsVoted ? true : false;
+    
+    const result = await db.query(
+      `INSERT INTO voters (first_name, father_name, grand_name, family_name, national_id, school, voted, time) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [first_name, father_name, grand_name, family_name, national_id, school, voted, now]
+    );
+    
+    const newVoter = result.rows[0];
+    io.emit('voter_updated', newVoter); // Notify all clients (or 'voter_added' if we want a separate event)
+    res.json(newVoter);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Import voters from CSV/Excel (Protected)
 app.post('/api/voters/import', requireAdmin, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
